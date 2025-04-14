@@ -159,13 +159,17 @@ class VoskModule(reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
-  fun feedAudioData(data: ReadableArray, promise: Promise) {
-    if (recognizer == null) {
-      promise.reject(IOException("Recognizer is not started"))
-      return
+  fun feedAudioData(data: ReadableArray, options: ReadableMap? = null, promise: Promise) {
+    if (model == null) {
+      promise.reject(IOException("Model is not loaded yet"))
     }
 
     try {
+        recognizer =
+          if (options != null && options.hasKey("grammar") && !options.isNull("grammar"))
+            Recognizer(model, sampleRate, makeGrammar(options.getArray("grammar")!!))
+          else
+            Recognizer(model, sampleRate)
       // Convert ReadableArray to byte array (assuming 16-bit PCM data)
       val audioData = ByteArray(data.size())
       for (i in 0 until data.size()) {
