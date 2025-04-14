@@ -215,6 +215,34 @@ class Vosk: RCTEventEmitter {
         // stop engines and send onFinalResult event
         stopInternal(withoutEvents: false)
     }
+    
+    @objc(feedAudioData:withResolver:withRejecter:)
+    func feedAudioData(audioData: [UInt8], resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
+        // Ensure that recognizer is initialized
+        guard let recognizer = recognizer else {
+            reject("feedAudioData", "Recognizer not started", nil)
+            return
+        }
+
+        // Create data from byte array
+        let audioDataSize = audioData.count
+        var byteArray = [Int8](repeating: 0, count: audioDataSize)
+
+        for (index, value) in audioData.enumerated() {
+            byteArray[index] = Int8(value)
+        }
+
+        // Feed audio data into Vosk recognizer
+        let result = vosk_recognizer_accept_waveform(recognizer, &byteArray, Int32(audioDataSize))
+        if result == 1 {
+            // Get the final recognized result
+            let resultJson = String(cString: vosk_recognizer_result(recognizer))
+            resolve(resultJson)
+        } else {
+            reject("feedAudioData", "Failed to process audio data", nil)
+        }
+    }
+
 
     /// Do internal cleanup on stop recognition
     func stopInternal(withoutEvents: Bool) {

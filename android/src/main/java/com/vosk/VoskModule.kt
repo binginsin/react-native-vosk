@@ -28,7 +28,7 @@ class VoskModule(reactContext: ReactApplicationContext) :
     return NAME
   }
 
-override fun onResult(hypothesis: String) {
+  override fun onResult(hypothesis: String) {
     // Get text data from string object
     val text = parseHypothesis(hypothesis)
 
@@ -91,7 +91,7 @@ override fun onResult(hypothesis: String) {
       data
     )
   }
-
+  
   /**
    * Translates array of string(s) to required kaldi string format
    * @return the array of string(s) as a single string
@@ -155,6 +155,34 @@ override fun onResult(hypothesis: String) {
         cleanModel()
         promise.reject(e)
       }
+    }
+  }
+
+  @ReactMethod
+  fun feedAudioData(data: ReadableArray, promise: Promise) {
+    if (recognizer == null) {
+      promise.reject(IOException("Recognizer is not started"))
+      return
+    }
+
+    try {
+      // Convert ReadableArray to byte array (assuming 16-bit PCM data)
+      val audioData = ByteArray(data.size())
+      for (i in 0 until data.size()) {
+        audioData[i] = data.getInt(i).toByte()
+      }
+
+      // Feed the audio data to Vosk recognizer
+      val result = recognizer?.acceptWaveForm(audioData, audioData.size)
+      if (result == true) {
+        // Get the result and send it back as the recognized text
+        val transcription = recognizer?.getResult()
+        promise.resolve(transcription)
+      } else {
+        promise.reject("Error", "Failed to process audio data")
+      }
+    } catch (e: Exception) {
+      promise.reject(e)
     }
   }
 

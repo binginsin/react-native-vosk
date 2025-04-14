@@ -68,6 +68,31 @@ export default class Vosk {
    */
   unload = () => VoskModule.unload();
 
+  /**
+   * Manually feeds PCM audio data to the recognizer.
+   *
+   * @param audioData - PCM audio data as an array (e.g., byte array or Int16Array).
+   * @returns A promise that resolves with the recognized text.
+   *
+   * @example
+   *   vosk.feedAudioData(audioData).then(transcription => {
+   *      console.log('Transcribed text:', transcription);
+   *   }).catch(error => {
+   *      console.error('Error processing audio data', error);
+   *   });
+   */
+  feedAudioData = async (audioData: Uint8Array): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      VoskModule.feedAudioData(audioData, (error: any, result: string) => {
+        if (error) {
+          reject(error);  // Reject the promise with an error
+        } else {
+          resolve(result);  // Resolve the promise with the transcription result
+        }
+      });
+    });
+  };
+
   // Event listeners builders
 
   onResult = (cb: (e: string) => void): EventSubscription => {
